@@ -1,0 +1,75 @@
+name: backend
+version: 0.0.0.1
+github: "ibizaman/hledger-ui/backend"
+license: BSD3
+author: "Pierre Penninckx"
+maintainer: "ibizapeanut@gmail.com"
+copyright: "2020 Pierre Penninckx"
+
+description: Please see the README on GitHub at <https://ibizaman/hledger-ui/backend>
+
+dependencies:
+    # base must match what comes with ghc
+    - base == 4.12.0.0
+    - common
+    - monad-logger == 0.3.30
+    - mtl == 2.2.2
+    - persistent == 2.9.2
+    - persistent-sqlite == 2.9.3
+    - resource-pool == 0.2.3.2
+    - resourcet == 1.2.2
+    - safe-exceptions == 0.1.7.0
+    - servant == 0.16.2
+    - servant-options == 0.1.0.0
+    - servant-server == 0.16.2
+    - text >= 1.2.3.0 && < 1.2.4
+    - unliftio == 0.2.12
+    - wai-cors == 0.2.7
+    - warp == 3.2.28
+
+default-extensions:
+    - OverloadedStrings
+
+library:
+    source-dirs: src
+    dependencies: {}
+
+executables:
+    backend-exe:
+        main: main.hs
+        source-dirs: app
+        dependencies:
+            - backend
+        ghc-options:
+            - -rtsopts
+            - -threaded
+            - -with-rtsopts=-N
+
+tests:
+    backend-test:
+        main: Spec.hs
+        source-dirs: test
+        dependencies:
+            - backend
+            - hspec == 2.7.1
+            - hspec-core == 2.7.1
+            - hspec-discover == 2.7.1
+        ghc-options:
+            - -rtsopts
+            - -threaded
+            - -with-rtsopts=-N
+
+ghc-options:
+    - -Wall
+    - -Wcompat
+    - -Wincomplete-record-updates
+    - -Wincomplete-uni-patterns
+    - -Wredundant-constraints
+    - -fwarn-incomplete-patterns
+    - -fwarn-incomplete-record-updates
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-missing-signatures
+    - -fwarn-name-shadowing
+    - -fwarn-overlapping-patterns
+    - -fwarn-tabs
+    - -fwarn-unused-imports

@@ -1,0 +1,11 @@
+# tmp dirs
+*-result
+dist-*
+hoogle
+*.cabal
+
+# editor tmp files
+*~
+*#
+
+sqlite.db*
