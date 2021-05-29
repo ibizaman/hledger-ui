@@ -3,7 +3,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 
 module Main
   ( main,
@@ -25,6 +24,7 @@ import Control.Monad.Reader
   )
 import Data.Function ((&))
 import Data.Pool (Pool)
+import qualified Data.Text as T
 import qualified Database.Persist.Sql as PSql
 import qualified Database.Persist.Sqlite as PSqlite
 import qualified Network.Wai.Handler.Warp as Warp
@@ -41,7 +41,7 @@ import System.IO
     hSetBuffering,
     stdout,
   )
-import Types (migrateAll)
+import Types (Settings (..), migrateAll)
 import UnliftIO (MonadUnliftIO)
 import UnliftIO.Resource (runResourceT)
 
@@ -78,7 +78,7 @@ data Options = Options
   { dbPool :: Pool PSql.SqlBackend
   }
 
-runDB :: MonadUnliftIO m => Pool PSql.SqlBackend -> (ReaderT PSql.SqlBackend m a) -> (m a)
+runDB :: MonadUnliftIO m => Pool PSql.SqlBackend -> ReaderT PSql.SqlBackend m a -> m a
 runDB = flip PSql.runSqlPool
 
 app :: Options -> Server.Application
@@ -97,7 +97,7 @@ readerToHandler :: Options -> App a -> Server.Handler a
 readerToHandler options r = liftIO $ runReaderT (runApp r) options
 
 server :: Server.ServerT API App
-server = list :<|> add :<|> remove
+server = list :<|> add :<|> remove :<|> setJournalLocation :<|> getJournalLocation
   where
     list = do
       Options {dbPool} <- ask
@@ -108,3 +108,14 @@ server = list :<|> add :<|> remove
     remove itemId = do
       Options {dbPool} <- ask
       liftIO $ runDB dbPool $ PSql.delete itemId
+
+    setJournalLocation newJournalLocation = do
+      Options {dbPool} <- ask
+      let settingsId = PSql.toSqlKey 0
+      liftIO $ runDB dbPool $ PSql.repsert settingsId Settings {settingsJournalLocation = T.unpack newJournalLocation}
+      return ()
+
+    getJournalLocation = do
+      Options {dbPool} <- ask
+      let settingsId = PSql.toSqlKey 0
+      liftIO $ runDB dbPool $ fmap (T.pack . settingsJournalLocation) <$> PSql.get settingsId

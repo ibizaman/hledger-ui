@@ -10,6 +10,7 @@
 module Types
   ( Item (..),
     ItemId,
+    Settings (..),
     P.Entity,
     migrateAll,
     itemListToMap,
@@ -26,6 +27,9 @@ PTH.share
 Item json
     name String
     deriving Eq Show
+
+Settings json
+    journalLocation String
 |]
 
 itemListToMap :: [P.Entity Item] -> Map.Map ItemId Item

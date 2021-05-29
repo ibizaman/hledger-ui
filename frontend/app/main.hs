@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
@@ -35,6 +36,7 @@ run = do
   Dom.el "div" $ do
     newItemEvent <- addWidget
     _ <- listWidget newItemEvent
+    journalLocationWidget
     return ()
 
 srList ::
@@ -51,7 +53,16 @@ srRemove ::
   Dom.Dynamic t (Either Text ItemId) ->
   Dom.Event t tag ->
   m (Dom.Event t (SR.ReqResult tag ()))
-srList :<|> srAdd :<|> srRemove =
+srSetJournalLocation ::
+  SR.SupportsServantReflex t m =>
+  Dom.Dynamic t (Either Text Text) ->
+  Dom.Event t tag ->
+  m (Dom.Event t (SR.ReqResult tag ()))
+srGetJournalLocation ::
+  SR.SupportsServantReflex t m =>
+  Dom.Event t tag ->
+  m (Dom.Event t (SR.ReqResult tag (Maybe Text)))
+srList :<|> srAdd :<|> srRemove :<|> srSetJournalLocation :<|> srGetJournalLocation =
   SR.client
     (Proxy :: Proxy API)
     (Proxy :: Proxy (m :: * -> *))
@@ -101,7 +112,25 @@ addWidget ::
 addWidget = Dom.el "div" $ do
   uName <- fmap (Item . unpack) . Dom.value <$> Dom.inputElement Dom.def
   butn <- Dom.button "Add Item"
-  fmap (uncurry Map.singleton) <$> R.fmapMaybe success <$> srAdd (fmap Right uName) (R.tagPromptlyDyn uName butn)
+  fmap (uncurry Map.singleton) . R.fmapMaybe success <$> srAdd (fmap Right uName) (R.tagPromptlyDyn uName butn)
+
+journalLocationWidget ::
+  ( SR.SupportsServantReflex t m,
+    Dom.DomBuilder t m,
+    Dom.MonadHold t m,
+    Dom.PostBuild t m,
+    MonadFix m
+  ) =>
+  m ()
+journalLocationWidget = Dom.el "div" $ do
+  rec refreshButn <- Dom.button "Refresh"
+      onload <- R.getPostBuild
+      journalLocation <- Dom.holdDyn "No Location Set" . R.fmapMaybe (fmap (maybe "No Location Set" id . fst) . success) =<< srGetJournalLocation (R.leftmost [onload, refreshButn])
+      Dom.el "div" $ Dom.dynText journalLocation
+      newJournalLocation <- Dom.value <$> Dom.inputElement Dom.def
+      saveButn <- Dom.button "Save"
+      _ <- srSetJournalLocation (fmap Right newJournalLocation) saveButn
+  return ()
 
 success :: SR.ReqResult a k -> Maybe (k, a)
 success (SR.ResponseSuccess v tag _) = Just (tag, v)
