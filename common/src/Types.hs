@@ -18,6 +18,7 @@ module Types
 where
 
 import qualified Data.Map as Map
+import Data.Text (Text)
 import qualified Database.Persist as P
 import qualified Database.Persist.TH as PTH
 
@@ -25,11 +26,11 @@ PTH.share
   [PTH.mkPersist PTH.sqlSettings, PTH.mkMigrate "migrateAll"]
   [PTH.persistLowerCase|
 Item json
-    name String
+    name Text
     deriving Eq Show
 
 Settings json
-    journalLocation String
+    journalLocation Text
 |]
 
 itemListToMap :: [P.Entity Item] -> Map.Map ItemId Item

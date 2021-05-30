@@ -13,7 +13,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Proxy (Proxy (Proxy))
 import qualified Data.Set as Set
-import Data.Text (Text, pack, unpack)
+import Data.Text (Text)
 import Map (dynamicMap)
 import qualified Reflex as R
 import qualified Reflex.Dom as Dom
@@ -90,7 +90,7 @@ listWidget newEvent = do
         Dom.el "ul" $
           Dom.listWithKey itemMap $
             \itemId item -> Dom.el "li" $ do
-              Dom.dynText $ fmap (pack . itemName) item
+              Dom.dynText $ fmap itemName item
               delbutn <- Dom.button "X"
               R.fmapMaybe (fmap snd . success)
                 <$> srRemove
@@ -110,7 +110,7 @@ addWidget ::
   ) =>
   m (Dom.Event t (Map ItemId Item))
 addWidget = Dom.el "div" $ do
-  uName <- fmap (Item . unpack) . Dom.value <$> Dom.inputElement Dom.def
+  uName <- fmap Item . Dom.value <$> Dom.inputElement Dom.def
   butn <- Dom.button "Add Item"
   fmap (uncurry Map.singleton) . R.fmapMaybe success <$> srAdd (fmap Right uName) (R.tagPromptlyDyn uName butn)
 

@@ -24,7 +24,6 @@ import Control.Monad.Reader
   )
 import Data.Function ((&))
 import Data.Pool (Pool)
-import qualified Data.Text as T
 import qualified Database.Persist.Sql as PSql
 import qualified Database.Persist.Sqlite as PSqlite
 import qualified Network.Wai.Handler.Warp as Warp
@@ -112,10 +111,10 @@ server = list :<|> add :<|> remove :<|> setJournalLocation :<|> getJournalLocati
     setJournalLocation newJournalLocation = do
       Options {dbPool} <- ask
       let settingsId = PSql.toSqlKey 0
-      liftIO $ runDB dbPool $ PSql.repsert settingsId Settings {settingsJournalLocation = T.unpack newJournalLocation}
+      liftIO $ runDB dbPool $ PSql.repsert settingsId Settings {settingsJournalLocation = newJournalLocation}
       return ()
 
     getJournalLocation = do
       Options {dbPool} <- ask
       let settingsId = PSql.toSqlKey 0
-      liftIO $ runDB dbPool $ fmap (T.pack . settingsJournalLocation) <$> PSql.get settingsId
+      liftIO $ runDB dbPool $ fmap settingsJournalLocation <$> PSql.get settingsId
