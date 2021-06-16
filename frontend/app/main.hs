@@ -11,6 +11,7 @@ import Api (API)
 import Control.Monad.Fix (MonadFix)
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Data.Maybe (fromMaybe)
 import Data.Proxy (Proxy (Proxy))
 import qualified Data.Set as Set
 import Data.Text (Text)
@@ -22,7 +23,7 @@ import qualified Servant.Reflex as SR
 import Types (Entity, Item (..), ItemId, itemListToMap)
 
 main :: IO ()
-main = Dom.mainWidget $ run
+main = Dom.mainWidget run
 
 run ::
   ( Dom.DomBuilder t m,
@@ -83,7 +84,7 @@ listWidget newEvent = do
   rec butn <- Dom.button "Refresh"
       onload <- R.getPostBuild
       replaceEvent :: (R.Event t (Map ItemId Item)) <-
-        fmap itemListToMap <$> R.fmapMaybe SR.reqSuccess <$> srList (R.leftmost [onload, butn])
+        fmap itemListToMap . R.fmapMaybe SR.reqSuccess <$> srList (R.leftmost [onload, butn])
       itemMap :: R.Dynamic t (Map.Map ItemId Item) <-
         dynamicMap Map.empty replaceEvent newEvent deleteEvent
       deleteEvent' :: R.Dynamic t (Map.Map ItemId (R.Event t ItemId)) <-
@@ -125,7 +126,7 @@ journalLocationWidget ::
 journalLocationWidget = Dom.el "div" $ do
   rec refreshButn <- Dom.button "Refresh"
       onload <- R.getPostBuild
-      journalLocation <- Dom.holdDyn "No Location Set" . R.fmapMaybe (fmap (maybe "No Location Set" id . fst) . success) =<< srGetJournalLocation (R.leftmost [onload, refreshButn])
+      journalLocation <- Dom.holdDyn "No Location Set" . R.fmapMaybe (fmap (fromMaybe "No Location Set" . fst) . success) =<< srGetJournalLocation (R.leftmost [onload, refreshButn])
       Dom.el "div" $ Dom.dynText journalLocation
       newJournalLocation <- Dom.value <$> Dom.inputElement Dom.def
       saveButn <- Dom.button "Save"
